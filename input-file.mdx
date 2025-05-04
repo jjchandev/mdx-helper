@@ -1,0 +1,185 @@
+---
+avatarSrc: 'https://firebasestorage.googleapis.com/v0/b/jjweb-2b475.appspot.com/o/IMG_3405.jpg?alt=media&token=3544c192-6ba2-4c09-91fe-008fe1ed42ac'
+biography: 'Custom Web Designer for Small Businesses'
+title: 'Stripe API for Accepting Payments and Selling Online'
+author: 'JJ Chan'
+category: 'ecommerce'
+imageUrl: 'https://firebasestorage.googleapis.com/v0/b/jjweb-2b475.appspot.com/o/Article%20Cover%20Images%2FChatGPT%20Image%20Apr%2012%2C%202025%2C%2001_08_20%20PM.png?alt=media&token=5f5b4be4-68f9-45d6-8e03-d7b054279414'
+pinned: true
+link: 'stripe-api-tutorial-for-accepting-payments-and-sell-online'
+---
+
+A few years ago, I helped a friend launch a side hustle selling online coaching programs. 
+
+We built her site, styled the brand, and set up her store. 
+
+But when it came time to *actually accept payments*, the magic started to feel... technical. 🤯
+
+"Wait, how do I collect credit cards?" she asked.
+
+That moment introduced me to **Stripe** — the tool that now powers payments for millions of businesses online, from side hustles to massive marketplaces.
+
+So, in this post, I’m walking you through how to **accept payments using Stripe**, step by step — with the same approach I took to help her.
+
+No fluff. Just real code, real tools, and a real sense of *“hey, you’ve got this.”*
+
+<Image 
+  src="https://images.pexels.com/photos/4482900/pexels-photo-4482900.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+  alt="Stripe API Illustration"
+  style={{
+    borderRadius: '12px',
+    margin: '1rem 0',
+    width: '100%',
+    height: 'auto',
+    maxHeight: '360px',
+    objectFit: 'cover'
+  }}
+/>
+
+## What Is Stripe, Really?
+
+Stripe is a developer-first payments platform. 
+
+It's like the engine behind checkout buttons on websites and apps you probably use every day — like Notion, Substack, or Kickstarter.
+
+The best part? You don’t need to reinvent the wheel.
+
+Stripe gives you:
+
+- Secure payment processing
+- Fraud protection
+- Prebuilt checkout flows
+- Easy-to-use APIs
+
+Let’s dive into setting this up like a pro — without getting overwhelmed.
+
+## Step 1: Setting Up Stripe
+
+First things first: [Create a Stripe account](https://dashboard.stripe.com/register) if you haven’t already.
+
+Once you're in, head over to your **Dashboard** to grab your **API keys**. These are like passwords that let your app talk to Stripe.
+
+In test mode, you'll see two keys:
+
+- **Publishable key**: For the frontend
+- **Secret key**: For your server (keep this safe!)
+
+```bash
+# In your .env file
+STRIPE_SECRET_KEY=sk_test_51...
+```
+
+## Step 2: Installing Stripe
+
+Let’s get our backend set up. In this tutorial, we’re using Node.js, but you can adapt this for Python, Ruby, PHP, or whatever backend you’re comfortable with.
+
+```bash
+npm install stripe
+```
+
+Then, in your backend server:
+
+```ts
+// server.js or api/checkout.js
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+```
+
+Cool, Stripe’s installed and ready to go.
+
+## Step 3: Creating a Checkout Session
+
+Let’s say you’re selling one product — like a candle. Here’s how you can kick off a Stripe Checkout session.
+
+```ts
+export default async function handler(req, res) {
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    mode: 'payment',
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Handmade Lavender Candle',
+          },
+          unit_amount: 2500, // in cents = $25.00
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: 'https://yourdomain.com/success',
+    cancel_url: 'https://yourdomain.com/cancel',
+  });
+
+  res.status(200).json({ url: session.url });
+}
+```
+
+That’s it. You call this endpoint from your frontend, and Stripe gives you a link that opens a secure, beautifully designed checkout page.
+
+Pro tip: Use Stripe’s test card numbers to simulate payments. No real money involved.
+
+## Bonus: Webhooks (a.k.a. Stripe Calling You Back)
+
+Imagine your user pays — how does your backend know?
+
+That’s where webhooks come in. Stripe pings your server when events happen, like a payment succeeding.
+
+ou can listen for those and trigger actions (e.g., send a confirmation email or unlock access).
+
+```ts
+import { buffer } from 'micro';
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+const endpointSecret = 'whsec_...';
+
+export default async function handler(req, res) {
+  const buf = await buffer(req);
+  const sig = req.headers['stripe-signature'];
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(buf, sig, endpointSecret);
+  } catch (err) {
+    return res.status(400).send(`Webhook error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    console.log('✅ Payment succeeded for session:', session.id);
+    // Do something awesome here
+  }
+
+  res.status(200).json({ received: true });
+}
+```
+
+You can set up webhooks in your Stripe dashboard or locally using the Stripe CLI:
+
+```bash
+stripe listen --forward-to localhost:3000/api/webhook
+```
+
+If you followed along, you’ve:
+
+- Installed and configured Stripe
+- Created a secure checkout session
+- Learned how to react to payment events with webhooks
+
+Now you’re not just selling products — you're building real commerce workflows.
+
+Stripe does an amazing job of letting you focus on what makes your business great — not just on the plumbing underneath.
+
+So go ahead, build that custom store, sell those digital downloads, or launch that course.
+
+And if you ever get stuck? I’ve been there. I can help.
+
+[**Want to see how I can help? Let’s build something together →**](https://goldwebdesigns.com)
